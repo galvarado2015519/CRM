@@ -7,8 +7,9 @@ const userSchema = Schema({
     name: String,
     username: String,
     email: String,
+    password: String,
     telephone: Number,
-    task:[{type: Schema.Types.ObjectId, ref: 'task'}]
+    table:[{type: Schema.Types.ObjectId, ref: 'table'}]
 })
 
 module.exports = mongoose.model('user', userSchema);

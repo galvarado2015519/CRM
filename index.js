@@ -6,7 +6,7 @@ const app = require('./app');
 
 mongoose.Promise = global.Promise;
 
-mongoose.connect('mongodb://localhost:27017/dbCRM',{useNewUrlParser:true, useUnifiedTopology:true})
+mongoose.connect('mongodb://localhost:27017/dbCRM',{useNewUrlParser:true, useUnifiedTopology:true, useFindAndModify: false})
     .then(()=>{
         console.log('Conexión a la base de datos correcta')
         app.listen(port, ()=>{

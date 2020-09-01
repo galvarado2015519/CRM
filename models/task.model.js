@@ -5,14 +5,12 @@ const Schema = mongoose.Schema;
 
 const taskSchema = {
     state: String,
-    comment: String,
+    comment: [],
     persons: {type: Schema.Types.ObjectId, ref: 'user'},
     numbers: Number,
     date: Date,
     laber: String,
-    subElements: [
-        String
-    ]
+    subElements: []
 }
 
 module.exports = mongoose.model('task', taskSchema);
