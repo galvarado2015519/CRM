@@ -2,13 +2,14 @@
 
 const express = require('express');
 const api = express.Router();
+const authentication = require('../middleware/authenticated');
 
 const taskController = require('../Controllers/task.controller');
 
-api.post('/', taskController.saveTask);
-api.put('/:id', taskController.updateTask);
-api.delete('/:id', taskController.deleteTask);
-api.get('/:id', taskController.viewTask);
+api.post('/:id', authentication.ensureAuth, taskController.saveTask);
+api.put('/:id', authentication.ensureAuth, taskController.updateTask);
+api.delete('/:id', authentication.ensureAuth, taskController.deleteTask);
+api.get('/:id', authentication.ensureAuth, taskController.viewTask);
 
 api.get('/', taskController.viewTasks);
 
