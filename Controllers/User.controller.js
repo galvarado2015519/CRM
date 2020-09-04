@@ -2,6 +2,7 @@
 
 const User = require('../models/user.model');
 const bcrypt = require('bcrypt-nodejs');
+const jwt = require('../services/jwt');
 
 function saveUser(req, res) {
     
@@ -23,7 +24,7 @@ function saveUser(req, res) {
                 if(err){
                     res.status(500).send({message:"Error general del servidor, err: " + err});
                 }else if(passwordEncrypt){
-                    user.password = body.password;
+                    user.password = passwordEncrypt;
 
                     user.save((err, userSave)=>{
                         if(err){    
@@ -46,37 +47,46 @@ function updateUser(req, res) {
     const idUser = req.params.id;
     const body = req.body;
 
-    User.findOne({$or:[{email: body.name}, {username: body.username}]}, (err, hotelRepeat)=>{
-        if(err){
-            res.status(500).send({message:"Error general del servidor ", err});
-        }else if(hotelRepeat){
-            res.status(418).send({message:"El nombre de usuario ya esta registrado"});
-        }else{
-            User.findByIdAndUpdate(idUser, body, {new:true},(err,userUpdate)=>{
-                if(err){
-                    res.status(500).send({message:"Error general del servidor ", err});
-                }else if(userUpdate){
-                    res.send({UserUpdate: userUpdate});
-                }else{
-                    res.status(404).send({message: "Su sesión no esta activa"});
-                }
-            })
-        }
-    });
+    if(idUser == req.user.sub){
+        User.findOne({$or:[{email: body.name}, {username: body.username}]}, (err, userRepeat)=>{
+            if(err){
+                res.status(500).send({message:"Error general del servidor ", err});
+            }else if(userRepeat){
+                console.log(userRepeat)
+                res.status(418).send({message:"El nombre de usuario ya esta registrado"});
+            }else{
+                User.findByIdAndUpdate(idUser, body, {new:true},(err,userUpdate)=>{
+                    if(err){
+                        res.status(500).send({message:"Error general del servidor ", err});
+                    }else if(userUpdate){
+                        res.send({UserUpdate: userUpdate});
+                    }else{
+                        res.status(404).send({message: "Su sesión no esta activa"});
+                    }
+                });
+            }
+        });
+    }else{
+        res.send({message:"No tienes permisos para esta ruta"});
+    }
 }
 
 function deleteUser(req, res) {
-    var idUser = req.params.id;
+    const idUser = req.params.id;
 
-    User.findByIdAndRemove(idUser,(err,deleted)=>{
-        if(err){
-            res.status(500).send({message:"Error general del servidor ", err});
-        }else if(deleted){
-            res.send({message: "Usuario Eliminado"});
-        }else{
-            res.status(404).send({message: "Su sesión no se encuentra activa, vuelva a iniciar sesión"});
-        }
-    });
+    if(idUser == req.user.sub){
+        User.findByIdAndRemove(idUser,(err,deleted)=>{
+            if(err){
+                res.status(500).send({message:"Error general del servidor ", err});
+            }else if(deleted){
+                res.send({message: "Usuario Eliminado"});
+            }else{
+                res.status(404).send({message: "Su sesión no se encuentra activa, vuelva a iniciar sesión"});
+            }
+        });
+    }else{
+        res.send({message:"No tienes permisos para esta ruta"});
+    }    
 }
 
 function viewUser(req, res) {
@@ -105,10 +115,38 @@ function viewUsers(req, res) {
     });
 }
 
+function login(req, res) {
+    
+    const body = req.body;
+
+    if( body.email && body.password || body.username){
+        User.findOne({$or:[{email: body.email},{username: body.username}]}, (err, userFind)=>{
+            if(err){
+                res.status(500).send({message:"1. Error general del servidor: " + err});
+            }else if(userFind){
+                bcrypt.compare(body.password, userFind.password, (err, passwordCheck)=>{
+                    if(err){
+                        res.status(500).send({message:"2. Error general del servidor: " + err});
+                    }else if(passwordCheck){
+                        res.send({Bienvenido: userFind.name, token: jwt.createToken(userFind)});
+                    }else{
+                        res.status(404).send({message:"La contraseña es inconrrecta"});
+                    }
+                })
+            }else{
+                res.send({mesagge: "Este usuario no existente"});
+            }
+        });
+    }else{
+        res.status(404).send({message:"Ingrese todos los parametros"});
+    }
+}
+
 module.exports = {
     saveUser,
     updateUser,
     deleteUser,
     viewUser,
-    viewUsers
+    viewUsers,
+    login
 }
